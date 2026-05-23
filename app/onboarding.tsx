@@ -83,7 +83,7 @@ export default function OnboardingScreen() {
         </View>
 
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.push("/sign-up")}
           className="mb-2 h-14 w-full flex-row items-center justify-center rounded-2xl bg-lingua-purple active:opacity-90"
           style={{
             shadowColor: "#6C4EF5",
