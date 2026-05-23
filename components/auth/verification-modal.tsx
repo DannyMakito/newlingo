@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Keyboard,
   KeyboardEvent,
   Modal,
@@ -17,14 +17,19 @@ type VerificationModalProps = {
   visible: boolean;
   email: string;
   onClose: () => void;
+  onVerify: (code: string) => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
 };
 
 export function VerificationModal({
   visible,
   email,
   onClose,
+  onVerify,
+  isLoading = false,
+  error = null,
 }: VerificationModalProps) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const [code, setCode] = useState("");
@@ -33,10 +38,10 @@ export function VerificationModal({
   useEffect(() => {
     if (!visible) {
       setKeyboardHeight(0);
+      setCode("");
       return;
     }
 
-    setCode("");
     const timer = setTimeout(() => inputRef.current?.focus(), 400);
 
     const showEvent =
@@ -62,14 +67,17 @@ export function VerificationModal({
     };
   }, [visible]);
 
-  const handleCodeChange = (text: string) => {
+  const handleCodeChange = async (text: string) => {
+    if (isLoading) {
+      return;
+    }
+
     const digits = text.replace(/\D/g, "").slice(0, 6);
     setCode(digits);
 
     if (digits.length === 6) {
       Keyboard.dismiss();
-      onClose();
-      router.replace("/");
+      await onVerify(digits);
     }
   };
 
@@ -85,12 +93,10 @@ export function VerificationModal({
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+        <Pressable style={styles.backdrop} onPress={onClose} disabled={isLoading} />
 
         <View style={{ marginBottom: keyboardHeight }}>
-          <View
-            style={[styles.sheet, { paddingBottom: sheetBottomPadding }]}
-          >
+          <View style={[styles.sheet, { paddingBottom: sheetBottomPadding }]}>
             <View style={styles.handle} />
             <Text style={styles.title}>Check your email</Text>
             <Text style={styles.subtitle}>
@@ -102,6 +108,7 @@ export function VerificationModal({
               <Pressable
                 onPress={() => inputRef.current?.focus()}
                 style={styles.codeRow}
+                disabled={isLoading}
               >
                 {Array.from({ length: 6 }).map((_, index) => (
                   <View
@@ -122,6 +129,7 @@ export function VerificationModal({
                 onChangeText={handleCodeChange}
                 keyboardType="number-pad"
                 maxLength={6}
+                editable={!isLoading}
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"
                 caretHidden
@@ -129,9 +137,19 @@ export function VerificationModal({
               />
             </View>
 
-            <Text style={styles.hint}>
-              Enter the code using your number pad
-            </Text>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            {isLoading ? (
+              <ActivityIndicator
+                color="#6C4EF5"
+                style={styles.loader}
+                size="small"
+              />
+            ) : (
+              <Text style={styles.hint}>
+                Enter the code using your number pad
+              </Text>
+            )}
           </View>
         </View>
       </View>
@@ -225,6 +243,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#6B7280",
     textAlign: "center",
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  error: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#FF4D4F",
+    textAlign: "center",
+    marginTop: 16,
+  },
+  loader: {
     marginTop: 24,
     marginBottom: 8,
   },

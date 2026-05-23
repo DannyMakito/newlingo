@@ -1,7 +1,9 @@
+import { AuthLoading } from "@/components/auth/auth-loading";
 import { images } from "@/constants/images";
+import { useAuth } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -34,6 +36,15 @@ function SpeechBubble({
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return <AuthLoading />;
+  }
+
+  if (isSignedIn) {
+    return <Redirect href="/" />;
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
