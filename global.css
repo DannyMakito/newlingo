@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Typography — BEM block: typo, elements match design system scale */
+  .typo__h1 {
+    @apply font-poppins-bold text-h1 text-text-primary;
+  }
+
+  .typo__h2 {
+    @apply font-poppins-semibold text-h2 text-text-primary;
+  }
+
+  .typo__h3 {
+    @apply font-poppins-semibold text-h3 text-text-primary;
+  }
+
+  .typo__h4 {
+    @apply font-poppins-medium text-h4 text-text-primary;
+  }
+
+  .typo__body-lg {
+    @apply font-poppins-regular text-body-lg text-text-primary;
+  }
+
+  .typo__body-md {
+    @apply font-poppins-regular text-body-md text-text-primary;
+  }
+
+  .typo__body-sm {
+    @apply font-poppins-regular text-body-sm text-text-secondary;
+  }
+
+  .typo__caption {
+    @apply font-poppins-regular text-caption text-text-secondary;
+  }
+}
+
+@layer utilities {
+  /* Surface helpers */
+  .surface {
+    @apply bg-surface;
+  }
+
+  .surface--card {
+    @apply rounded-2xl border border-border bg-background;
+  }
+
+  /* Brand color shortcuts */
+  .text-brand {
+    @apply text-lingua-purple;
+  }
+
+  .bg-brand {
+    @apply bg-lingua-purple;
+  }
+
+  .bg-brand-deep {
+    @apply bg-lingua-deep-purple;
+  }
+}
