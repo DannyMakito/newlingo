@@ -2,6 +2,7 @@ export interface Language {
   id: string; // e.g., 'es', 'fr'
   name: string; // e.g., 'Spanish', 'French'
   flag: string; // e.g., '🇪🇸', '🇫🇷'
+  learners?: string; // e.g., '28.4M learners'
 }
 
 export interface Vocabulary {
