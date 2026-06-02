@@ -2,7 +2,7 @@ import "../global.css";
 
 import { ClerkProvider } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
-import { Stack, useNavigationContainerRef } from "expo-router";
+import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import * as WebBrowser from "expo-web-browser";
@@ -21,9 +21,15 @@ if (!clerkPublishableKey) {
   );
 }
 
+const postHogKey = process.env.EXPO_PUBLIC_POSTHOG_KEY;
+if (!postHogKey) {
+  throw new Error(
+    "Add EXPO_PUBLIC_POSTHOG_KEY to your .env file",
+  );
+}
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontAssets);
-  const navigationRef = useNavigationContainerRef();
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -37,18 +43,16 @@ export default function RootLayout() {
 
   return (
     <PostHogProvider
-      apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY!}
+      apiKey={postHogKey}
       options={{
         host: process.env.EXPO_PUBLIC_POSTHOG_HOST,
         captureAppLifecycleEvents: true,
-        debug: __DEV__,
       }}
       autocapture={{
         captureScreens: true,
         captureTouches: true,
         propsToCapture: ['testID'],
       }}
-      navigationRef={navigationRef}
     >
       <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
         <Stack screenOptions={{ headerShown: false }} />

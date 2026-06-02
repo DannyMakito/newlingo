@@ -91,7 +91,7 @@ export default function LanguageScreen() {
               const lang = languages.find((l) => l.id === selectedLanguageId);
               posthog.capture('language_selected', {
                 language_id: selectedLanguageId,
-                language_name: lang?.name,
+                language_name: lang?.name || null,
               });
             }
             router.back();

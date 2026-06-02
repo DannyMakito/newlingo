@@ -14,8 +14,8 @@ interface UserProgressState {
 export const useUserProgressStore = create<UserProgressState>()(
   persist(
     (set) => ({
-      streak: 12,
-      currentXP: 15,
+      streak: 0,
+      currentXP: 0,
       targetXP: 20,
       setStreak: (streak) => set({ streak }),
       setCurrentXP: (currentXP) => set({ currentXP }),

@@ -17,11 +17,14 @@ export default function Home() {
   const { streak, currentXP, targetXP } = useUserProgressStore();
   const posthog = usePostHog();
 
+  const safeTarget = Math.max(1, targetXP);
+  const progressPercentage = Math.min(100, Math.max(0, (currentXP / safeTarget) * 100));
+
   useEffect(() => {
     if (user?.id) {
       posthog.identify(user.id, {
-        email: user.primaryEmailAddress?.emailAddress,
-        name: user.firstName,
+        email: user.primaryEmailAddress?.emailAddress || null,
+        name: user.firstName || null,
       });
     }
   }, [user, posthog]);
@@ -80,7 +83,7 @@ export default function Home() {
             <View className="h-3 w-full rounded-full bg-[#FCE5D8] overflow-hidden">
               <View 
                 className="h-full rounded-full bg-[#FF7918]" 
-                style={{ width: `${(currentXP / targetXP) * 100}%` }} 
+                style={{ width: `${progressPercentage}%` }} 
               />
             </View>
           </View>
@@ -108,7 +111,7 @@ export default function Home() {
               style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
               onPress={() => posthog.capture('lesson_continued', {
                 language_id: selectedLanguageId,
-                language_name: selectedLanguage?.name,
+                language_name: selectedLanguage?.name || null,
                 current_xp: currentXP,
                 streak,
               })}
