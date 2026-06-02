@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
 import { languages } from '@/data/languages';
 import { images } from '@/constants/images';
 import { useLanguageStore } from '@/store/languageStore';
@@ -12,6 +13,7 @@ export default function LanguageScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const { selectedLanguageId, setSelectedLanguageId } = useLanguageStore();
+  const posthog = usePostHog();
 
   const filteredLanguages = languages.filter((lang) =>
     lang.name.toLowerCase().includes(search.toLowerCase())
@@ -84,7 +86,16 @@ export default function LanguageScreen() {
         </View>
 
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => {
+            if (selectedLanguageId) {
+              const lang = languages.find((l) => l.id === selectedLanguageId);
+              posthog.capture('language_selected', {
+                language_id: selectedLanguageId,
+                language_name: lang?.name,
+              });
+            }
+            router.back();
+          }}
           className="mt-4 mb-12 h-14 w-full items-center justify-center rounded-2xl bg-lingua-purple"
           style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
         >

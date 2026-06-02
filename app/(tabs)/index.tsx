@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/expo';
 import { Image } from 'expo-image';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import { useLanguageStore } from '@/store/languageStore';
 import { useUserProgressStore } from '@/store/userProgressStore';
 import { languages } from '@/data/languages';
@@ -12,8 +14,17 @@ export default function Home() {
   const { user } = useUser();
   const { selectedLanguageId } = useLanguageStore();
   const selectedLanguage = languages.find((lang) => lang.id === selectedLanguageId);
-
   const { streak, currentXP, targetXP } = useUserProgressStore();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (user?.id) {
+      posthog.identify(user.id, {
+        email: user.primaryEmailAddress?.emailAddress,
+        name: user.firstName,
+      });
+    }
+  }, [user, posthog]);
 
   const firstName = user?.firstName || 'Alex';
 
@@ -92,7 +103,16 @@ export default function Home() {
             <Text className="mb-5 font-poppins-medium text-base text-white opacity-90">
               A1 • Unit 3
             </Text>
-            <Pressable className="self-start rounded-full bg-white px-6 py-3" style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}>
+            <Pressable
+              className="self-start rounded-full bg-white px-6 py-3"
+              style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+              onPress={() => posthog.capture('lesson_continued', {
+                language_id: selectedLanguageId,
+                language_name: selectedLanguage?.name,
+                current_xp: currentXP,
+                streak,
+              })}
+            >
               <Text className="font-poppins-semibold text-base text-lingua-purple">
                 Continue
               </Text>
@@ -110,7 +130,7 @@ export default function Home() {
         {/* Today's plan */}
         <View className="mb-8">
           <View className="mb-4 flex-row items-center justify-between">
-            <Text className="font-poppins-bold text-xl text-text-primary">Today's plan</Text>
+            <Text className="font-poppins-bold text-xl text-text-primary">{"Today's plan"}</Text>
             <Pressable>
               <Text className="font-poppins-semibold text-base text-lingua-purple">View all</Text>
             </Pressable>

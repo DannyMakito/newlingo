@@ -6,6 +6,7 @@ import { VerificationModal } from "@/components/auth/verification-modal";
 import { useSocialAuth } from "@/hooks/use-social-auth";
 import { finalizeSignUp, getClerkErrorMessage } from "@/lib/auth";
 import { useAuth, useSignUp } from "@clerk/expo";
+import { usePostHog } from "posthog-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, Redirect, useRouter } from "expo-router";
 import { useState } from "react";
@@ -24,6 +25,7 @@ export default function SignUpScreen() {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
   const { signUp, errors, fetchStatus } = useSignUp();
+  const posthog = usePostHog();
   const {
     signInWithGoogle,
     signInWithFacebook,
@@ -90,6 +92,11 @@ export default function SignUpScreen() {
 
       // If sign-up is complete, finalize it
       if (signUp.status === "complete") {
+        posthog.identify(email.trim(), {
+          email: email.trim(),
+          $set_once: { signup_date: new Date().toISOString() },
+        });
+        posthog.capture('user_signed_up', { auth_method: 'email_password' });
         await finalizeSignUp(signUp, router);
         setShowVerification(false);
       } else {
