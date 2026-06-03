@@ -6,6 +6,7 @@ import { VerificationModal } from "@/components/auth/verification-modal";
 import { useSocialAuth } from "@/hooks/use-social-auth";
 import { finalizeSignIn, getClerkErrorMessage } from "@/lib/auth";
 import { useAuth, useSignIn } from "@clerk/expo";
+import { usePostHog } from "posthog-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, Redirect, useRouter } from "expo-router";
 import { useState } from "react";
@@ -24,6 +25,7 @@ export default function SignInScreen() {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
   const { signIn, errors, fetchStatus } = useSignIn();
+  const posthog = usePostHog();
   const {
     signInWithGoogle,
     signInWithFacebook,
@@ -100,6 +102,8 @@ export default function SignInScreen() {
 
       // If sign-in is complete, finalize it
       if (signIn.status === "complete") {
+        posthog.identify(email.trim(), { email: email.trim() });
+        posthog.capture('user_signed_in', { auth_method: 'email_code' });
         await finalizeSignIn(signIn, router);
         setShowVerification(false);
       } else if (signIn.status === "needs_second_factor") {

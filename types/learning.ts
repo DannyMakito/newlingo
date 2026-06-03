@@ -32,6 +32,7 @@ export interface Lesson {
   unitId: string;
   title: string;
   description: string;
+  image?: any;
   goals: string[];
   activities: Activity[];
 }
