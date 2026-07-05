@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/backend": "^3.10.0",
     "@clerk/expo": "^3.2.16",
     "@config-plugins/react-native-webrtc": "^13.0.0",
     "@expo/vector-icons": "^15.0.3",

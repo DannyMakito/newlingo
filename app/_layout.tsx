@@ -26,9 +26,7 @@ if (!clerkPublishableKey) {
 
 const postHogKey = process.env.EXPO_PUBLIC_POSTHOG_KEY;
 if (!postHogKey) {
-  throw new Error(
-    "Add EXPO_PUBLIC_POSTHOG_KEY to your .env file",
-  );
+  console.warn("Add EXPO_PUBLIC_POSTHOG_KEY to your .env file");
 }
 
 export default function RootLayout() {
@@ -48,10 +46,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <PostHogProvider
-          apiKey={postHogKey}
+          apiKey={postHogKey ?? 'disabled'}
           options={{
             host: process.env.EXPO_PUBLIC_POSTHOG_HOST,
             captureAppLifecycleEvents: true,
+            disabled: !postHogKey,
           }}
           autocapture={{
             captureScreens: true,

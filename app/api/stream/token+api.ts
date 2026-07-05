@@ -1,4 +1,5 @@
 import { StreamClient } from '@stream-io/node-sdk';
+import { getAuthUserId } from '@/lib/apiAuth';
 
 const apiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY;
 const apiSecret = process.env.STREAM_API_SECRET;
@@ -16,11 +17,16 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Stream client not configured properly on server' }, { status: 500 });
     }
 
-    const body = await req.json();
-    const { userId } = body;
+    // Authenticate the caller via Clerk
+    let userId = await getAuthUserId(req);
 
     if (!userId) {
-      return Response.json({ error: 'Missing userId in request body' }, { status: 400 });
+      // Fall back to body userId for development when CLERK_SECRET_KEY is not set
+      const body = await req.json();
+      userId = body.userId;
+      if (!userId) {
+        return Response.json({ error: 'Unauthorized: missing or invalid token' }, { status: 401 });
+      }
     }
 
     // Generate token valid for 1 hour

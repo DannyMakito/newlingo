@@ -235,7 +235,11 @@ export default function AudioLessonScreen() {
     await stopAgentSession(callId);
 
     if (currentCall.state.callingState !== CallingState.LEFT) {
-      await currentCall.leave();
+      try {
+        await currentCall.leave();
+      } catch (err) {
+        console.error('Failed to leave call during endCallAndAgent', err);
+      }
     }
   }, [stopAgentSession]);
 
@@ -246,12 +250,18 @@ export default function AudioLessonScreen() {
     const callId = `lesson-${lessonIdStr}`;
     const currentCall = streamClient.call('audio_room', callId, { reuseInstance: true });
 
+    const abortController = new AbortController();
+    const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs = 15000) => {
+      const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+      return fetch(url, { ...options, signal: abortController.signal }).finally(() => clearTimeout(timeoutId));
+    };
+
     const setupCall = async () => {
       try {
         const apiUrl = getExpoApiUrl();
         
         // Ensure call is created on backend first
-        const response = await fetch(`${apiUrl}/api/stream/call`, {
+        const response = await fetchWithTimeout(`${apiUrl}/api/stream/call`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -274,7 +284,7 @@ export default function AudioLessonScreen() {
         setCall(currentCall);
         setAgentStatus('connecting');
 
-        const agentResponse = await fetch(`${apiUrl}/api/agent/start`, {
+        const agentResponse = await fetchWithTimeout(`${apiUrl}/api/agent/start`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -299,7 +309,11 @@ export default function AudioLessonScreen() {
 
         setAgentStatus('connected');
       } catch (err) {
-        console.error('Failed to setup call', err);
+        if ((err as Error).name === 'AbortError') {
+          console.warn('Lesson setup was aborted (timeout or unmount)');
+        } else {
+          console.error('Failed to setup call', err);
+        }
         if (isMounted) {
           setError('Failed to connect to the lesson.');
           setAgentStatus('failed');
@@ -307,16 +321,20 @@ export default function AudioLessonScreen() {
       }
     };
 
-    setupCall();
+    const setupPromise = setupCall();
 
     return () => {
       isMounted = false;
-      stopAgentSession(callId);
-      if (currentCall.state.callingState !== CallingState.LEFT) {
-        currentCall.leave().catch((err) => {
-          console.error('Failed to leave call', err);
-        });
-      }
+      abortController.abort();
+      // Wait for setup to finish before cleaning up to avoid race conditions
+      setupPromise.then(() => {
+        stopAgentSession(callId);
+        if (currentCall.state.callingState !== CallingState.LEFT) {
+          currentCall.leave().catch((err) => {
+            console.error('Failed to leave call', err);
+          });
+        }
+      });
       setCall(null);
       setAgentStatus('idle');
     };

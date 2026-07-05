@@ -27,7 +27,6 @@ export default function Home() {
   useEffect(() => {
     if (user?.id) {
       posthog.identify(user.id, {
-        email: user.primaryEmailAddress?.emailAddress || null,
         name: user.firstName || null,
       });
     }

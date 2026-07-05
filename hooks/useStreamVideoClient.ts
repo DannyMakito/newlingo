@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
 import { StreamVideoClient, type User } from '@/lib/streamVideo';
 import { useUser } from '@clerk/expo';
-import Constants from 'expo-constants';
+import { getExpoApiUrl } from '@/lib/apiUrl';
+
+const TOKEN_FETCH_TIMEOUT_MS = 10000;
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = TOKEN_FETCH_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 export function useStreamVideoClient() {
   const { user } = useUser();
@@ -18,13 +30,9 @@ export function useStreamVideoClient() {
         const apiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY;
         if (!apiKey) throw new Error('Missing Stream API Key');
 
-        // Using absolute URL for Expo API route in development might be needed,
-        // but relative fetch works on web. For React Native, we need full URL.
-        // Let's dynamically construct it or let fetch handle it if running through Expo router
-        const hostUri = Constants.expoConfig?.hostUri;
-        const apiUrl = hostUri ? `http://${hostUri}` : 'http://localhost:8081';
+        const apiUrl = getExpoApiUrl();
         
-        const response = await fetch(`${apiUrl}/api/stream/token`, {
+        const response = await fetchWithTimeout(`${apiUrl}/api/stream/token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id }),
@@ -46,7 +54,7 @@ export function useStreamVideoClient() {
         };
 
         const tokenProvider = async () => {
-          const tokenResponse = await fetch(`${apiUrl}/api/stream/token`, {
+          const tokenResponse = await fetchWithTimeout(`${apiUrl}/api/stream/token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id }),
