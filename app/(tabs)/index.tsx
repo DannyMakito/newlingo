@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/expo';
+import { useClerk, useUser } from '@clerk/expo';
 import { Image } from 'expo-image';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import { useLanguageStore } from '@/store/languageStore';
 import { useUserProgressStore } from '@/store/userProgressStore';
@@ -12,10 +13,13 @@ import { images } from '@/constants/images';
 
 export default function Home() {
   const { user } = useUser();
+  const { signOut } = useClerk();
+  const router = useRouter();
   const { selectedLanguageId } = useLanguageStore();
   const selectedLanguage = languages.find((lang) => lang.id === selectedLanguageId);
   const { streak, currentXP, targetXP } = useUserProgressStore();
   const posthog = usePostHog();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const safeTarget = Math.max(1, targetXP);
   const progressPercentage = Math.min(100, Math.max(0, (currentXP / safeTarget) * 100));
@@ -41,6 +45,17 @@ export default function Home() {
   };
   const greeting = selectedLanguageId ? (greetingByLanguage[selectedLanguageId] ?? 'Hello') : 'Hello';
 
+  const handleLogout = async () => {
+    try {
+      setIsSigningOut(true);
+      await signOut();
+      router.replace('/onboarding');
+    } catch (error) {
+      console.error('Failed to log out', error);
+      setIsSigningOut(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top', 'left', 'right']}>
       <ScrollView 
@@ -48,7 +63,7 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="mb-8 flex-row items-center justify-between">
+        <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-gray-100 overflow-hidden border border-gray-200">
               <Text className="text-2xl">{selectedLanguage?.flag || '🌍'}</Text>
@@ -68,6 +83,31 @@ export default function Home() {
             </Text>
             <Feather name="bell" size={24} color="#111827" />
           </View>
+        </View>
+
+        <View className="mb-8 flex-row gap-3">
+          <Pressable
+            onPress={() => router.push('/language')}
+            className="h-12 flex-1 flex-row items-center justify-center rounded-2xl bg-lingua-purple px-4"
+            style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+          >
+            <Feather name="globe" size={18} color="#FFFFFF" />
+            <Text className="ml-2 font-poppins-semibold text-sm text-white">
+              Select language
+            </Text>
+          </Pressable>
+
+          <Pressable
+            disabled={isSigningOut}
+            onPress={handleLogout}
+            className="h-12 flex-1 flex-row items-center justify-center rounded-2xl border border-gray-200 bg-white px-4"
+            style={({ pressed }) => ({ opacity: pressed || isSigningOut ? 0.65 : 1 })}
+          >
+            <Feather name="log-out" size={18} color="#FF4B4B" />
+            <Text className="ml-2 font-poppins-semibold text-sm text-[#FF4B4B]">
+              {isSigningOut ? 'Logging out...' : 'Log out'}
+            </Text>
+          </Pressable>
         </View>
 
         {/* Daily goal */}

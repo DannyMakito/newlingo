@@ -42,3 +42,9 @@ app-example
 /ios
 /android
 .env
+
+# Python & Agents
+.venv/
+.venv_agent/
+__pycache__/
+*.pyc

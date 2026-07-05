@@ -7,10 +7,13 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { PostHogProvider } from "posthog-react-native";
 
 import { clerkPublishableKey } from "@/lib/auth";
 import { fontAssets } from "@/theme/fonts";
+import { StreamVideoProvider } from "@/components/StreamVideoProvider";
 
 WebBrowser.maybeCompleteAuthSession();
 SplashScreen.preventAutoHideAsync();
@@ -42,21 +45,27 @@ export default function RootLayout() {
   }
 
   return (
-    <PostHogProvider
-      apiKey={postHogKey}
-      options={{
-        host: process.env.EXPO_PUBLIC_POSTHOG_HOST,
-        captureAppLifecycleEvents: true,
-      }}
-      autocapture={{
-        captureScreens: true,
-        captureTouches: true,
-        propsToCapture: ['testID'],
-      }}
-    >
-      <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
-        <Stack screenOptions={{ headerShown: false }} />
-      </ClerkProvider>
-    </PostHogProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <PostHogProvider
+          apiKey={postHogKey}
+          options={{
+            host: process.env.EXPO_PUBLIC_POSTHOG_HOST,
+            captureAppLifecycleEvents: true,
+          }}
+          autocapture={{
+            captureScreens: true,
+            captureTouches: true,
+            propsToCapture: ['testID'],
+          }}
+        >
+          <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+            <StreamVideoProvider>
+              <Stack screenOptions={{ headerShown: false }} />
+            </StreamVideoProvider>
+          </ClerkProvider>
+        </PostHogProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
